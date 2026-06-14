@@ -1,0 +1,2473 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weekend Visit Planner</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f4;
+      --surface: #ffffff;
+      --surface-soft: #eef4ee;
+      --ink: #202522;
+      --muted: #626d66;
+      --line: #dce3dc;
+      --accent: #2f7d5b;
+      --accent-dark: #1f5c41;
+      --accent-soft: #dff0e7;
+      --sky: #dceaf5;
+      --sun: #f8e6ad;
+      --rose: #f4d8d2;
+      --mint: #d8ece4;
+      --blue: #244d66;
+      --warn: #a85d13;
+      --danger: #a63f34;
+      --shadow: 0 8px 22px rgba(35, 50, 42, 0.07);
+      --radius: 14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      letter-spacing: 0;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.45;
+    }
+
+    .app-shell {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 18px 14px 96px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 12px;
+      padding: 12px 2px 14px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 7vw, 3rem);
+      line-height: 1;
+      max-width: 900px;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 640px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .layout {
+      display: grid;
+      gap: 22px;
+    }
+
+    .browse-panel,
+    .planner-panel {
+      min-width: 0;
+    }
+
+    .planner-panel {
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      gap: 12px;
+      align-content: start;
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      max-height: 72vh;
+      overflow: hidden;
+      padding: 10px 0 12px;
+      background: rgba(246, 247, 244, 0.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(220, 227, 220, 0.9);
+    }
+
+    .calendar-grid {
+      display: grid;
+      gap: 12px;
+      min-height: 0;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 72vh;
+      z-index: 20;
+      margin: 0 -14px 16px;
+      padding: 12px 14px;
+      background: rgba(246, 247, 244, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(220, 227, 220, 0.76);
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .filter-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip,
+    .ghost-button,
+    .primary-button,
+    .tiny-button,
+    .icon-button {
+      min-height: 40px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: transform 160ms ease, background 160ms ease, color 160ms ease, border-color 160ms ease;
+    }
+
+    .chip {
+      flex: 0 0 auto;
+      padding: 0 14px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      box-shadow: 0 2px 10px rgba(35, 50, 42, 0.04);
+    }
+
+    .chip.active {
+      background: var(--ink);
+      border-color: var(--ink);
+      color: #fff;
+    }
+
+    .primary-button {
+      padding: 0 16px;
+      background: var(--accent);
+      color: #fff;
+      box-shadow: none;
+    }
+
+    .primary-button:hover {
+      background: var(--accent-dark);
+      transform: translateY(-1px);
+    }
+
+    .ghost-button {
+      padding: 0 14px;
+      background: var(--surface);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .details-link {
+      min-height: 40px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      white-space: nowrap;
+      background: #f4f6f2;
+      color: var(--accent-dark);
+      border: 1px solid var(--line);
+      font-weight: 760;
+      text-decoration: none;
+      font-size: 0.92rem;
+    }
+
+    .place-link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .place-link:hover {
+      color: var(--accent-dark);
+      text-decoration: underline;
+    }
+
+    .tiny-button,
+    .icon-button {
+      min-height: 34px;
+      padding: 0 11px;
+      background: #f4f6f2;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      font-size: 0.88rem;
+    }
+
+    .icon-button {
+      width: 34px;
+      padding: 0;
+      border-radius: 10px;
+      font-weight: 800;
+    }
+
+    .search-wrap {
+      margin-top: 10px;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      min-height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 0 16px;
+      outline: none;
+      box-shadow: 0 2px 10px rgba(35, 50, 42, 0.04);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 6px 0 12px;
+    }
+
+    .section-title h2,
+    .summary-card h2 {
+      margin: 0;
+      font-size: 1.1rem;
+    }
+
+    .section-title span {
+      color: var(--muted);
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    .cards {
+      display: grid;
+      gap: 12px;
+    }
+
+    .activity-card {
+      display: grid;
+      grid-template-columns: 86px 1fr;
+      gap: 12px;
+      padding: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: none;
+    }
+
+    .art {
+      position: relative;
+      min-height: 92px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--mint);
+      display: grid;
+      place-items: center;
+      color: rgba(32, 37, 34, 0.72);
+      font-weight: 900;
+      font-size: 2rem;
+    }
+
+    .art span {
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 3px 0 rgba(255, 255, 255, 0.48));
+    }
+
+    .art svg {
+      position: relative;
+      z-index: 1;
+      width: 58px;
+      height: 58px;
+      color: rgba(32, 37, 34, 0.78);
+      filter: drop-shadow(0 3px 0 rgba(255, 255, 255, 0.48));
+    }
+
+    .art::before,
+    .art::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      opacity: 0.9;
+    }
+
+    .art::before {
+      width: 74px;
+      height: 74px;
+      right: -24px;
+      top: -18px;
+      background: rgba(255, 255, 255, 0.42);
+    }
+
+    .art::after {
+      width: 52px;
+      height: 18px;
+      left: 14px;
+      bottom: 14px;
+      background: rgba(255, 255, 255, 0.52);
+    }
+
+    .art.food { background: #f3dfcf; }
+    .art.outdoors { background: #d8ece4; }
+    .art.museum { background: #dceaf5; }
+    .art.play { background: #f8e6ad; }
+    .art.event { background: #f4d8d2; }
+    .art.home { background: #e5e6dc; }
+
+    .activity-main {
+      min-width: 0;
+    }
+
+    .card-top {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .activity-card h3 {
+      margin: 0 0 4px;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .category {
+      color: var(--accent-dark);
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .description {
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+      margin: 10px 0;
+    }
+
+    .meta {
+      padding: 8px;
+      border-radius: 10px;
+      background: #f5f7f2;
+      min-width: 0;
+    }
+
+    .meta b {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .meta span {
+      display: block;
+      margin-top: 2px;
+      font-weight: 800;
+      font-size: 0.92rem;
+      overflow-wrap: anywhere;
+    }
+
+    .badges,
+    .card-actions,
+    .block-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 0.76rem;
+      font-weight: 760;
+      background: #eff4ef;
+      color: var(--muted);
+      border: 1px solid transparent;
+    }
+
+    .badge.yes {
+      background: var(--accent-soft);
+      color: var(--accent-dark);
+    }
+
+    .badge.some {
+      background: #fbefd0;
+      color: #7a5315;
+    }
+
+    .badge.no {
+      background: #f5e1dd;
+      color: var(--danger);
+    }
+
+    .card-actions {
+      margin-top: 10px;
+    }
+
+    .day-card,
+    .summary-card {
+      background: rgba(255, 255, 255, 0.86);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: none;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .day-header,
+    .summary-header {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .day-header h2 {
+      margin: 0;
+      font-size: 1.04rem;
+    }
+
+    .day-header span {
+      color: var(--muted);
+      font-size: 0.86rem;
+      white-space: nowrap;
+    }
+
+    .blocks {
+      padding: 10px;
+      display: grid;
+      gap: 0;
+      min-height: 70px;
+    }
+
+    .itinerary-block {
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 10px;
+      padding: 10px 0;
+      border-radius: 13px;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid #e2e8e0;
+    }
+
+    .itinerary-block[draggable="true"] {
+      cursor: grab;
+    }
+
+    .itinerary-block.dragging {
+      opacity: 0.48;
+    }
+
+    .empty-block {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      padding-left: 84px;
+      color: var(--muted);
+      border-bottom: 1px dashed #cad4ca;
+      background: transparent;
+    }
+
+    .time-rail {
+      display: grid;
+      gap: 4px;
+      align-content: start;
+      padding-top: 2px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 750;
+      text-align: right;
+    }
+
+    .calendar-event {
+      display: grid;
+      gap: 8px;
+      padding: 11px;
+      border-radius: 12px;
+      background: #f8faf6;
+      border-left: 4px solid var(--accent);
+      box-shadow: inset 0 0 0 1px #e2e8e0;
+    }
+
+    .block-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .block-title strong {
+      line-height: 1.2;
+    }
+
+    .block-title span {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .timeline {
+      display: grid;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.3;
+    }
+
+    .time-picker-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .time-picker-row input {
+      min-height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 0 8px;
+      font-weight: 800;
+    }
+
+    .summary-card {
+      position: static;
+      z-index: 2;
+    }
+
+    .summary-body {
+      padding: 14px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .summary-stat {
+      background: #f6f8f3;
+      border: 1px solid #e2e8e0;
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .summary-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .summary-stat b {
+      display: block;
+      margin-top: 3px;
+      font-size: 1.05rem;
+    }
+
+    .warning-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .warning {
+      padding: 10px;
+      border-radius: 12px;
+      background: #fff4da;
+      color: var(--warn);
+      font-weight: 720;
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    .share-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 84px;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      background: var(--ink);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+      transition: opacity 160ms ease, transform 160ms ease;
+      font-weight: 760;
+      max-width: calc(100% - 28px);
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .sticky-brief {
+      position: fixed;
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+      z-index: 50;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 18px 42px rgba(32, 37, 34, 0.2);
+      backdrop-filter: blur(16px);
+    }
+
+    .brief-stats {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    .brief-stats b,
+    .brief-stats span {
+      display: block;
+      line-height: 1.1;
+    }
+
+    .brief-stats span {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 2px;
+    }
+
+    .empty-results {
+      padding: 26px 18px;
+      text-align: center;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+    }
+
+    .custom-activity {
+      margin-bottom: 12px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .custom-activity summary {
+      cursor: pointer;
+      padding: 14px;
+      font-weight: 850;
+      color: var(--accent-dark);
+      list-style: none;
+    }
+
+    .custom-activity summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .custom-form {
+      display: grid;
+      gap: 10px;
+      padding: 0 14px 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+      width: 100%;
+      min-height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fbfcfa;
+      color: var(--ink);
+      padding: 8px 10px;
+      font: inherit;
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .checkbox-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #f4f6f2;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 750;
+    }
+
+    @media (min-width: 860px) {
+      .app-shell {
+        padding: 28px 22px 40px;
+      }
+
+      .hero {
+        grid-template-columns: 1fr auto;
+        align-items: end;
+        padding-top: 18px;
+      }
+
+      .hero-actions {
+        justify-content: end;
+      }
+
+      .calendar-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+      }
+
+      .planner-panel {
+        top: 0;
+        max-height: 64vh;
+        border-radius: 0 0 var(--radius) var(--radius);
+      }
+
+      .toolbar {
+        top: 64vh;
+      }
+
+      .summary-card {
+        max-width: none;
+      }
+
+      .toolbar {
+        margin: 0 0 18px;
+        padding: 0;
+        background: transparent;
+        border-bottom: 0;
+        backdrop-filter: none;
+        position: static;
+      }
+
+      .cards {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .activity-card {
+        grid-template-columns: 132px 1fr;
+        align-items: stretch;
+      }
+
+      .form-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .sticky-brief {
+        display: none;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .activity-card {
+        grid-template-columns: 1fr;
+      }
+
+      .art {
+        min-height: 112px;
+      }
+
+      .meta-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .share-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .itinerary-block {
+        grid-template-columns: 58px 1fr;
+      }
+
+      .empty-block {
+        padding-left: 68px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      .toolbar,
+      .activity-card,
+      .sticky-brief,
+      .hero-actions,
+      .card-actions,
+      .block-actions,
+      .toast {
+        display: none !important;
+      }
+
+      .app-shell {
+        padding: 0;
+      }
+
+      .layout {
+        display: block;
+      }
+
+      .planner-panel {
+        display: block;
+        position: static;
+        max-height: none;
+        overflow: visible;
+        padding: 0;
+        background: #fff;
+        border-bottom: 0;
+        backdrop-filter: none;
+      }
+
+      .calendar-grid {
+        display: block;
+        max-height: none;
+        overflow: visible;
+      }
+
+      .day-card,
+      .summary-card {
+        break-inside: avoid;
+        box-shadow: none;
+        margin-bottom: 14px;
+        overflow: visible;
+      }
+
+      .summary-card {
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <h1>Weekend Visit Planner</h1>
+        <p>Pick a few activities and build a simple family itinerary.</p>
+      </div>
+      <div class="hero-actions">
+        <button class="ghost-button" id="clearPlanButton" type="button">Clear Plan</button>
+        <button class="primary-button" id="copyTopButton" type="button">Copy Itinerary</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="planner-panel" aria-label="Itinerary planner">
+        <div class="section-title">
+          <h2>Calendar</h2>
+          <span>Choose activities below</span>
+        </div>
+
+        <div class="calendar-grid">
+          <section class="day-card" id="fridayCard">
+            <div class="day-header">
+              <h2>Friday Afternoon</h2>
+              <span id="fridayCount">0 / 4 blocks</span>
+            </div>
+            <div class="blocks" id="fridayBlocks"></div>
+          </section>
+
+          <section class="day-card" id="saturdayCard">
+            <div class="day-header">
+              <h2>Saturday Daytime</h2>
+              <span id="saturdayCount">0 / 5 blocks</span>
+            </div>
+            <div class="blocks" id="saturdayBlocks"></div>
+          </section>
+        </div>
+
+        <section class="summary-card" id="summaryCard">
+          <div class="summary-header">
+            <h2>Trip Summary</h2>
+          </div>
+          <div class="summary-body">
+            <div class="summary-grid" id="summaryGrid"></div>
+            <div class="warning-list" id="warnings"></div>
+            <div class="share-actions">
+              <button class="primary-button" id="copyButton" type="button">Copy Itinerary</button>
+              <button class="ghost-button" id="printButton" type="button">Print / Save PDF</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="browse-panel" aria-labelledby="browseTitle">
+        <div class="toolbar" aria-label="Activity filters">
+          <div class="filter-row" id="filters"></div>
+          <div class="search-wrap">
+            <input id="searchInput" type="search" placeholder="Search activities, notes, or categories">
+          </div>
+        </div>
+
+        <div class="section-title">
+          <h2 id="browseTitle">Activities</h2>
+          <span id="resultCount">0 activities</span>
+        </div>
+        <details class="custom-activity">
+          <summary>Add a missing activity</summary>
+          <form class="custom-form" id="customActivityForm">
+            <div class="form-grid">
+              <label class="field">
+                Activity name
+                <input id="customName" type="text" required placeholder="Example: Coffee at Lantern">
+              </label>
+              <label class="field">
+                Category
+                <select id="customCategory">
+                  <option>Food & Drink</option>
+                  <option>Parks & Nature</option>
+                  <option>Museums</option>
+                  <option>Arcades & Play</option>
+                  <option>Events</option>
+                  <option>Shops & Games</option>
+                  <option>At Home</option>
+                  <option>Custom</option>
+                </select>
+              </label>
+              <label class="field">
+                Best day
+                <select id="customBestDay">
+                  <option value="Fri/Sat">Friday or Saturday</option>
+                  <option value="Fri">Friday</option>
+                  <option value="Sat">Saturday</option>
+                </select>
+              </label>
+              <label class="field">
+                Cost estimate
+                <input id="customCost" type="number" min="0" step="1" value="0">
+              </label>
+              <label class="field">
+                Duration minutes
+                <input id="customDuration" type="number" min="15" step="15" value="60">
+              </label>
+              <label class="field">
+                Travel from home
+                <input id="customTravel" type="number" min="0" step="5" value="15">
+              </label>
+              <label class="field">
+                Distance miles
+                <input id="customDistance" type="number" min="0" step="1" value="5">
+              </label>
+              <label class="field">
+                Website
+                <input id="customWebsite" type="url" placeholder="https://...">
+              </label>
+            </div>
+            <label class="field">
+              Short description
+              <textarea id="customDescription" placeholder="A quick note about why this might be fun."></textarea>
+            </label>
+            <div class="checkbox-row">
+              <label><input id="customKid" type="checkbox" checked> Kid friendly</label>
+              <label><input id="customDog" type="checkbox"> Dog friendly</label>
+              <label><input id="customRain" type="checkbox" checked> Rain friendly</label>
+              <label><input id="customIndoor" type="checkbox" checked> Indoor</label>
+              <label><input id="customOutdoor" type="checkbox"> Outdoor</label>
+              <label><input id="customFood" type="checkbox"> Food</label>
+            </div>
+            <button class="primary-button" type="submit">Add Activity Card</button>
+          </form>
+        </details>
+        <div class="cards" id="activityCards"></div>
+      </section>
+    </main>
+  </div>
+
+  <div class="sticky-brief">
+    <div class="brief-stats">
+      <div>
+        <b id="briefActivities">0 stops</b>
+        <span id="briefTime">0 hr total</span>
+      </div>
+      <div>
+        <b id="briefCost">$0</b>
+        <span>estimated cost</span>
+      </div>
+    </div>
+    <button class="primary-button" id="jumpButton" type="button">Calendar</button>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const filters = [
+      { id: "friday", label: "Friday" },
+      { id: "saturday", label: "Saturday" },
+      { id: "kidFriendly", label: "Kid Friendly" },
+      { id: "dogFriendly", label: "Dog Friendly" },
+      { id: "rainFriendly", label: "Rain Friendly" },
+      { id: "indoor", label: "Indoor" },
+      { id: "outdoor", label: "Outdoor" },
+      { id: "food", label: "Food" },
+      { id: "lowCost", label: "Low Cost" },
+      { id: "free", label: "Free Activities" }
+    ];
+
+    const rawActivities = [
+      {
+        id: "millennium-park",
+        name: "Millennium Park",
+        category: "Parks & Nature",
+        description: "Outdoor park with beach and trails; free entry; dog-friendly.",
+        bestDay: "Fri/Sat",
+        costEstimate: 0,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 10,
+        distanceFromHomeMiles: 4,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: false,
+        food: false,
+        notes: "Outdoor park with beach and trails; free entry; dog-friendly.",
+        cluster: "parks"
+      },
+      {
+        id: "grand-ravines-park",
+        name: "Grand Ravines Park",
+        category: "Parks & Nature",
+        description: "Scenic ravines park with dog-friendly trails and an off-leash area.",
+        bestDay: "Fri/Sat",
+        costEstimate: 0,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 25,
+        distanceFromHomeMiles: 12,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: false,
+        food: false,
+        notes: "Scenic ravines park; dog-friendly trails and off-leash area; free.",
+        cluster: "parks"
+      },
+      {
+        id: "john-ball-zoo",
+        name: "John Ball Zoo",
+        category: "Animals & Gardens",
+        description: "Classic family zoo option with a longer visit window and lots to see.",
+        bestDay: "Fri/Sat",
+        costEstimate: 143.7,
+        activityDurationMinutes: 150,
+        travelFromHomeMinutes: 10,
+        distanceFromHomeMiles: 3,
+        rainFriendly: "some",
+        kidFriendly: true,
+        dogFriendly: false,
+        outdoor: true,
+        indoor: false,
+        food: false,
+        notes: "Zoo open 9 AM-6 PM; weekend pricing adults $24.95, youth $18.95.",
+        websiteUrl: "https://grkids.com/john-ball-zoo-grand-rapids-mi/",
+        cluster: "west"
+      },
+      {
+        id: "little-bird",
+        name: "Little Bird",
+        category: "Food & Drink",
+        description: "Downtown bistro for an indoor meal with a family-friendly estimate.",
+        bestDay: "Fri/Sat",
+        costEstimate: 165,
+        activityDurationMinutes: 90,
+        travelFromHomeMinutes: 5,
+        distanceFromHomeMiles: 2,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: false,
+        indoor: true,
+        food: true,
+        notes: "Downtown bistro; estimate about $30 per adult meal and $15 for child; indoor dining.",
+        cluster: "downtown"
+      },
+      {
+        id: "vault-of-midnight",
+        name: "Vault of Midnight",
+        category: "Shops & Games",
+        description: "Comic and game shop downtown; easy add-on with optional small purchases.",
+        bestDay: "Fri/Sat",
+        costEstimate: 30,
+        activityDurationMinutes: 60,
+        travelFromHomeMinutes: 5,
+        distanceFromHomeMiles: 2,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: false,
+        indoor: true,
+        food: false,
+        notes: "Comic and game shop downtown; cost assumes small purchases.",
+        cluster: "downtown"
+      },
+      {
+        id: "grand-rapids-art-museum",
+        name: "Grand Rapids Art Museum",
+        category: "Museums",
+        description: "Downtown art museum with a rain-friendly, easy-to-scan visit.",
+        bestDay: "Fri/Sat",
+        costEstimate: 66,
+        activityDurationMinutes: 90,
+        travelFromHomeMinutes: 5,
+        distanceFromHomeMiles: 2,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: false,
+        outdoor: false,
+        indoor: true,
+        food: false,
+        notes: "Admission about $12 adults, $6 child; art museum downtown.",
+        cluster: "downtown"
+      },
+      {
+        id: "grand-rapids-childrens-museum",
+        name: "Grand Rapids Children's Museum",
+        category: "Museums",
+        description: "Interactive children's museum downtown with a clear family focus.",
+        bestDay: "Fri/Sat",
+        costEstimate: 72,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 5,
+        distanceFromHomeMiles: 2,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: false,
+        outdoor: false,
+        indoor: true,
+        food: false,
+        notes: "Admission $12 per person for ages 1-64; interactive museum.",
+        websiteUrl: "https://www.grcm.org/visit",
+        cluster: "downtown"
+      },
+      {
+        id: "blandford-nature-center",
+        name: "Blandford Nature Center",
+        category: "Parks & Nature",
+        description: "Trails and a visitor center for a nature-focused family stop.",
+        bestDay: "Fri/Sat",
+        costEstimate: 30,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 8,
+        distanceFromHomeMiles: 4,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: true,
+        food: false,
+        notes: "Admission $5 per person; trails and visitor center.",
+        websiteUrl: "https://blandfordnaturecenter.org/about/visit-us/",
+        cluster: "parks"
+      },
+      {
+        id: "annas-house-grand-haven",
+        name: "Anna's House",
+        category: "Food & Drink",
+        description: "Grand Haven breakfast stop, best paired with lakeshore activities.",
+        bestDay: "Sat",
+        costEstimate: 80,
+        activityDurationMinutes: 90,
+        travelFromHomeMinutes: 50,
+        distanceFromHomeMiles: 40,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: false,
+        indoor: true,
+        food: true,
+        notes: "Breakfast at Anna's House in Grand Haven; approx $15 per adult meal.",
+        cluster: "lakeshore"
+      },
+      {
+        id: "grand-haven-lighthouse-pier-walk",
+        name: "Grand Haven Lighthouse & Pier Walk",
+        category: "Parks & Nature",
+        description: "Free Lake Michigan pier walk that pairs naturally with Grand Haven breakfast.",
+        bestDay: "Sat",
+        costEstimate: 0,
+        activityDurationMinutes: 60,
+        travelFromHomeMinutes: 50,
+        distanceFromHomeMiles: 40,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: false,
+        food: false,
+        notes: "Free walk on the lighthouse pier along Lake Michigan.",
+        cluster: "lakeshore"
+      },
+      {
+        id: "kirk-park-dog-beach",
+        name: "Kirk Park Dog Beach",
+        category: "Parks & Nature",
+        description: "Dog-friendly Lake Michigan beach for an outdoor stop.",
+        bestDay: "Fri/Sat",
+        costEstimate: 0,
+        activityDurationMinutes: 90,
+        travelFromHomeMinutes: 30,
+        distanceFromHomeMiles: 25,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: false,
+        food: false,
+        notes: "Dog-friendly beach along Lake Michigan; free.",
+        cluster: "lakeshore"
+      },
+      {
+        id: "farmhaus-cider-co",
+        name: "Farmhaus Cider Co.",
+        category: "Food & Drink",
+        description: "Cider tasting in Hudsonville, better for adults than kid-focused plans.",
+        bestDay: "Fri/Sat",
+        costEstimate: 75,
+        activityDurationMinutes: 90,
+        travelFromHomeMinutes: 30,
+        distanceFromHomeMiles: 20,
+        rainFriendly: "some",
+        kidFriendly: false,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: true,
+        food: true,
+        notes: "Cider tasting in Hudsonville; cost estimate $15 per adult; not geared toward kids.",
+        cluster: "parks"
+      },
+      {
+        id: "dinner-at-silva",
+        name: "Dinner at Silva",
+        category: "Food & Drink",
+        description: "Dinner restaurant estimate for the full group.",
+        bestDay: "Fri/Sat",
+        costEstimate: 137,
+        activityDurationMinutes: 90,
+        travelFromHomeMinutes: 10,
+        distanceFromHomeMiles: 3,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: false,
+        outdoor: false,
+        indoor: true,
+        food: true,
+        notes: "Dinner restaurant; cost estimate about $25 per adult meal and $12 for child.",
+        cluster: "downtown"
+      },
+      {
+        id: "frederik-meijer-gardens",
+        name: "Frederik Meijer Gardens & Sculpture Park",
+        category: "Animals & Gardens",
+        description: "Botanical garden and sculpture park with indoor and outdoor areas.",
+        bestDay: "Fri/Sat",
+        costEstimate: 103,
+        activityDurationMinutes: 150,
+        travelFromHomeMinutes: 20,
+        distanceFromHomeMiles: 10,
+        rainFriendly: "some",
+        kidFriendly: true,
+        dogFriendly: false,
+        outdoor: true,
+        indoor: true,
+        food: false,
+        notes: "Botanical garden and sculpture park; adult $18, child $13; partially indoor/outdoor.",
+        cluster: "east"
+      },
+      {
+        id: "whitecaps-baseball-game",
+        name: "West Michigan Whitecaps Baseball Game",
+        category: "Events",
+        description: "Minor league baseball at LMCU Ballpark; a longer evening-style activity.",
+        bestDay: "Fri (6/19) & Sat (6/20)",
+        costEstimate: 85,
+        activityDurationMinutes: 180,
+        travelFromHomeMinutes: 15,
+        distanceFromHomeMiles: 7,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: false,
+        outdoor: true,
+        indoor: false,
+        food: true,
+        notes: "Minor league baseball at LMCU Ballpark; games 6:35 PM Friday and 7:05 PM Saturday.",
+        websiteUrl: "https://www.oursportscentral.com/services/schedule/west-michigan-whitecaps/t-497",
+        cluster: "north"
+      },
+      {
+        id: "west-michigan-chalk-art-festival",
+        name: "West Michigan Chalk Art Festival",
+        category: "Events",
+        description: "Free family-friendly chalk art festival at Tanger Outlets.",
+        bestDay: "Fri (6/19) & Sat (6/20)",
+        costEstimate: 0,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 25,
+        distanceFromHomeMiles: 20,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: false,
+        food: false,
+        notes: "Chalk art festival at Tanger Outlets, 7 AM-9 PM June 19-21; free family-friendly event.",
+        websiteUrl: "https://events.grkids.com/grkids/detail/21122/1781866800000",
+        cluster: "parks"
+      },
+      {
+        id: "rak-stars-karaoke-night",
+        name: "RAK-Stars Karaoke Night",
+        category: "Events",
+        description: "Downtown Market karaoke night with raffle tickets available.",
+        bestDay: "Sat (6/20)",
+        costEstimate: 75,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 5,
+        distanceFromHomeMiles: 2,
+        rainFriendly: "yes",
+        kidFriendly: false,
+        dogFriendly: false,
+        outdoor: false,
+        indoor: true,
+        food: false,
+        notes: "Karaoke night at Downtown Market 7-9 PM; bring friends, raffle tickets available.",
+        websiteUrl: "https://www.downtownmarketgr.com/public-events",
+        cluster: "downtown"
+      },
+      {
+        id: "pinball-land-arcade",
+        name: "Pinball Land Arcade",
+        category: "Arcades & Play",
+        description: "Retro arcade in Rockford with unlimited play during the visit window.",
+        bestDay: "Fri/Sat",
+        costEstimate: 90,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 20,
+        distanceFromHomeMiles: 15,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: false,
+        outdoor: false,
+        indoor: true,
+        food: false,
+        notes: "Retro arcade in Rockford; admission $15 for two hours; open Friday 2-10 PM and Saturday 12-10 PM.",
+        websiteUrl: "https://pinball-land.com/",
+        cluster: "rockford"
+      },
+      {
+        id: "rlm-amusements",
+        name: "RLM Amusements",
+        category: "Arcades & Play",
+        description: "Open-play arcade on Plainfield Ave with long play windows.",
+        bestDay: "Fri/Sat",
+        costEstimate: 85,
+        activityDurationMinutes: 180,
+        travelFromHomeMinutes: 10,
+        distanceFromHomeMiles: 6,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: false,
+        outdoor: false,
+        indoor: true,
+        food: false,
+        notes: "Open-play arcade on Plainfield Ave; Friday 5 PM-1 AM, Saturday 12-10 PM; $15 adult admission, $10 kids.",
+        websiteUrl: "https://events.grkids.com/grkids/detail/21558/1781366400000",
+        cluster: "north"
+      },
+      {
+        id: "great-lakes-glow-golf",
+        name: "Great Lakes Glow Golf",
+        category: "Arcades & Play",
+        description: "Blacklight mini golf with free-play arcade.",
+        bestDay: "Fri/Sat",
+        costEstimate: 123,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 10,
+        distanceFromHomeMiles: 6,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: false,
+        outdoor: false,
+        indoor: true,
+        food: false,
+        notes: "Blacklight mini golf with free-play arcade; unlimited golf and arcade estimate $20.50 per person.",
+        websiteUrl: "https://www.greatlakesglowgolf.com/pricing",
+        cluster: "north"
+      },
+      {
+        id: "movie-night-at-chriss",
+        name: "Movie Night at Chris's",
+        category: "At Home",
+        description: "At-home projector movie night with ice cream and popcorn.",
+        bestDay: "Fri/Sat",
+        costEstimate: 0,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 0,
+        distanceFromHomeMiles: 0,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: false,
+        indoor: true,
+        food: true,
+        notes: "At home relaxing watching a movie on the projector, ice cream, popcorn.",
+        cluster: "home"
+      },
+      {
+        id: "archival-brewing-biergarten",
+        name: "Archival Brewing Biergarten",
+        category: "Food & Drink",
+        description: "Dog-friendly biergarten with craft drinks and scratch-made food.",
+        bestDay: "Fri/Sat",
+        costEstimate: 110,
+        activityDurationMinutes: 90,
+        travelFromHomeMinutes: 15,
+        distanceFromHomeMiles: 10,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: false,
+        food: true,
+        notes: "Dog-friendly wraparound deck and biergarten; craft brews and scratch-made food; Belmont.",
+        websiteUrl: "https://archivalbrewing.com/our-biergarten/",
+        cluster: "north"
+      },
+      {
+        id: "mitten-brewing-co",
+        name: "The Mitten Brewing Co.",
+        category: "Food & Drink",
+        description: "Vintage baseball-themed microbrewery with pizza and a dog-friendly patio.",
+        bestDay: "Fri/Sat",
+        costEstimate: 85,
+        activityDurationMinutes: 90,
+        travelFromHomeMinutes: 5,
+        distanceFromHomeMiles: 1,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: true,
+        food: true,
+        notes: "Vintage baseball-themed microbrewery pairing craft beers with gourmet pizzas; dog-friendly patio.",
+        websiteUrl: "https://www.mittenbrewing.com/",
+        cluster: "west"
+      },
+      {
+        id: "third-nature-brewing",
+        name: "Third Nature Brewing",
+        category: "Food & Drink",
+        description: "Rockford brewery focused on quality ingredients and creative brewing.",
+        bestDay: "Fri/Sat",
+        costEstimate: 110,
+        activityDurationMinutes: 120,
+        travelFromHomeMinutes: 20,
+        distanceFromHomeMiles: 12,
+        rainFriendly: "yes",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: true,
+        food: true,
+        notes: "Brewery in Rockford focusing on quality ingredients and creative brewing.",
+        websiteUrl: "https://thirdnaturebrewing.com/",
+        cluster: "rockford"
+      },
+      {
+        id: "east-grand-rapids-reeds-lake",
+        name: "East Grand Rapids Walk / Reeds Lake",
+        category: "Parks & Nature",
+        description: "Relaxed walk around town and Reeds Lake.",
+        bestDay: "Fri/Sat",
+        costEstimate: 0,
+        activityDurationMinutes: 60,
+        travelFromHomeMinutes: 15,
+        distanceFromHomeMiles: 15,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: false,
+        food: false,
+        notes: "Relax walk around town and Reeds Lake.",
+        cluster: "east"
+      },
+      {
+        id: "rockford-downtown-walk",
+        name: "Rockford Downtown Walk",
+        category: "Parks & Nature",
+        description: "Relaxed walk around downtown Rockford.",
+        bestDay: "Fri/Sat",
+        costEstimate: 0,
+        activityDurationMinutes: 60,
+        travelFromHomeMinutes: 10,
+        distanceFromHomeMiles: 15,
+        rainFriendly: "no",
+        kidFriendly: true,
+        dogFriendly: true,
+        outdoor: true,
+        indoor: false,
+        food: false,
+        notes: "Relax walk around town.",
+        cluster: "rockford"
+      }
+    ];
+
+    const clusterTravelMinutes = {
+      home: { home: 0, downtown: 5, west: 8, parks: 14, east: 14, north: 12, rockford: 20, lakeshore: 45 },
+      downtown: { home: 5, downtown: 5, west: 8, parks: 15, east: 15, north: 12, rockford: 24, lakeshore: 50 },
+      west: { home: 8, downtown: 8, west: 5, parks: 12, east: 20, north: 13, rockford: 25, lakeshore: 42 },
+      parks: { home: 14, downtown: 15, west: 12, parks: 10, east: 22, north: 18, rockford: 26, lakeshore: 32 },
+      east: { home: 14, downtown: 15, west: 20, parks: 22, east: 8, north: 20, rockford: 28, lakeshore: 55 },
+      north: { home: 12, downtown: 12, west: 13, parks: 18, east: 20, north: 8, rockford: 18, lakeshore: 48 },
+      rockford: { home: 20, downtown: 24, west: 25, parks: 26, east: 28, north: 18, rockford: 6, lakeshore: 58 },
+      lakeshore: { home: 45, downtown: 50, west: 42, parks: 32, east: 55, north: 48, rockford: 58, lakeshore: 10 }
+    };
+
+    let customActivities = [];
+    let activities = buildActivityList();
+
+    const state = {
+      activeFilters: new Set(),
+      search: "",
+      itinerary: {
+        friday: [],
+        saturday: []
+      },
+      dragged: null
+    };
+
+    const maxBlocks = {
+      friday: 4,
+      saturday: 5
+    };
+
+    const dayDefaultStartTimes = {
+      friday: "13:00",
+      saturday: "09:00"
+    };
+
+    const dayDefaultDates = {
+      friday: "2026-06-19",
+      saturday: "2026-06-20"
+    };
+
+    const storageKey = "weekendVisitPlanner.v1";
+    const $ = (id) => document.getElementById(id);
+
+    function buildActivityList() {
+      const sourceActivities = [...rawActivities, ...customActivities];
+      return sourceActivities.map((activity) => ({
+        ...activity,
+        travelTimesToOtherActivities: buildTravelTimes(activity, sourceActivities)
+      }));
+    }
+
+    function buildTravelTimes(activity, sourceActivities) {
+      const times = {};
+      sourceActivities.forEach((other) => {
+        if (other.id === activity.id) return;
+        const clusterTimes = clusterTravelMinutes[activity.cluster] || {};
+        times[other.id] = clusterTimes[other.cluster] || 15;
+      });
+      return times;
+    }
+
+    function supportsDay(activity, day) {
+      const value = activity.bestDay.toLowerCase();
+      return day === "friday" ? value.includes("fri") : value.includes("sat");
+    }
+
+    function formatMoney(value) {
+      return value % 1 === 0
+        ? "$" + value.toFixed(0)
+        : "$" + value.toFixed(2);
+    }
+
+    function formatMinutes(minutes) {
+      if (!minutes) return "0 min";
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      if (!hours) return mins + " min";
+      if (!mins) return hours + " hr";
+      return hours + " hr " + mins + " min";
+    }
+
+    function timeToMinutes(time) {
+      if (!/^\d{2}:\d{2}$/.test(time || "")) return null;
+      const [hours, minutes] = time.split(":").map(Number);
+      return hours * 60 + minutes;
+    }
+
+    function minutesToTime(minutes) {
+      const normalized = ((minutes % 1440) + 1440) % 1440;
+      const hours = Math.floor(normalized / 60);
+      const mins = normalized % 60;
+      return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+    }
+
+    function formatClock(time) {
+      const minutes = timeToMinutes(time);
+      if (minutes === null) return "--";
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      const hour12 = hours % 12 || 12;
+      const suffix = hours < 12 ? "AM" : "PM";
+      return `${hour12}:${String(mins).padStart(2, "0")} ${suffix}`;
+    }
+
+    function formatDate(date) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return "";
+      const [year, month, day] = date.split("-").map(Number);
+      return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+        weekday: "short",
+        month: "short",
+        day: "numeric"
+      });
+    }
+
+    function getActivity(id) {
+      return activities.find((activity) => activity.id === id);
+    }
+
+    function getActivityUrl(activity) {
+      if (activity.id === "movie-night-at-chriss") return "";
+      if (activity.websiteUrl) return activity.websiteUrl;
+      if (activity.id === "rockford-downtown-walk") {
+        return "https://www.google.com/maps/search/?api=1&query=Rockford%20Michigan";
+      }
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.name + " Grand Rapids Michigan")}`;
+    }
+
+    function placeNameHtml(activity) {
+      const url = getActivityUrl(activity);
+      if (!url) return activity.name;
+      return `<a class="place-link" href="${url}" target="_blank" rel="noopener noreferrer">${activity.name}</a>`;
+    }
+
+    function makeCustomId(name) {
+      const slug = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 42) || "activity";
+      let id = `custom-${slug}`;
+      let counter = 2;
+      const existing = new Set(activities.map((activity) => activity.id));
+      while (existing.has(id)) {
+        id = `custom-${slug}-${counter}`;
+        counter += 1;
+      }
+      return id;
+    }
+
+    function getArtClass(activity) {
+      if (activity.category === "Food & Drink") return "food";
+      if (activity.category === "Museums") return "museum";
+      if (activity.category === "Arcades & Play" || activity.category === "Shops & Games") return "play";
+      if (activity.category === "Events") return "event";
+      if (activity.category === "At Home") return "home";
+      return "outdoors";
+    }
+
+    function getActivityGraphic(activity) {
+      const name = activity.name.toLowerCase();
+      if (name.includes("zoo")) return graphic("zoo");
+      if (name.includes("beach") || name.includes("lighthouse") || name.includes("pier")) return graphic("lake");
+      if (name.includes("park") || name.includes("ravines") || name.includes("nature") || name.includes("walk") || name.includes("reeds")) return graphic("park");
+      if (name.includes("museum") || name.includes("art")) return graphic("museum");
+      if (name.includes("garden")) return graphic("garden");
+      if (name.includes("baseball") || name.includes("whitecaps")) return graphic("baseball");
+      if (name.includes("chalk") || name.includes("festival")) return graphic("event");
+      if (name.includes("karaoke")) return graphic("music");
+      if (name.includes("pinball") || name.includes("arcade") || name.includes("amusements") || name.includes("golf")) return graphic("play");
+      if (name.includes("movie")) return graphic("home");
+      if (activity.food) return graphic("food");
+      return graphic("map");
+    }
+
+    function graphic(type) {
+      const common = `viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"`;
+      const svgs = {
+        park: `<svg ${common}><path d="M13 48h38"/><path d="M32 48V25"/><path d="M20 28c3-10 21-10 24 0"/><path d="M24 35c2-9 14-9 16 0"/><path d="M32 25c-8 0-13-4-13-10 8 0 13 4 13 10Z"/><path d="M32 25c8 0 13-4 13-10-8 0-13 4-13 10Z"/></svg>`,
+        lake: `<svg ${common}><path d="M10 43c6 0 6-4 12-4s6 4 12 4 6-4 12-4 6 4 12 4"/><path d="M10 52c6 0 6-4 12-4s6 4 12 4 6-4 12-4 6 4 12 4"/><path d="M36 31V12l12 6-12 6"/><path d="M36 31H24"/></svg>`,
+        zoo: `<svg ${common}><circle cx="20" cy="24" r="5"/><circle cx="32" cy="18" r="5"/><circle cx="44" cy="24" r="5"/><circle cx="24" cy="37" r="5"/><circle cx="40" cy="37" r="5"/><path d="M23 43c4 5 14 5 18 0"/></svg>`,
+        food: `<svg ${common}><circle cx="30" cy="35" r="15"/><circle cx="30" cy="35" r="7"/><path d="M50 14v36"/><path d="M44 14v12c0 5 6 5 6 0"/><path d="M14 14v36"/><path d="M10 14v12"/><path d="M18 14v12"/></svg>`,
+        museum: `<svg ${common}><path d="M12 25h40"/><path d="M16 25l16-11 16 11"/><path d="M18 25v23"/><path d="M30 25v23"/><path d="M42 25v23"/><path d="M13 48h38"/></svg>`,
+        garden: `<svg ${common}><path d="M32 50V26"/><path d="M32 34c-12 0-18-7-18-17 12 0 18 7 18 17Z"/><path d="M32 31c12 0 18-6 18-15-12 0-18 6-18 15Z"/><path d="M17 50h30"/></svg>`,
+        baseball: `<svg ${common}><circle cx="32" cy="32" r="20"/><path d="M22 16c7 7 7 25 0 32"/><path d="M42 16c-7 7-7 25 0 32"/><path d="M25 24l-4 3"/><path d="M25 34l-5 2"/><path d="M39 24l4 3"/><path d="M39 34l5 2"/></svg>`,
+        event: `<svg ${common}><path d="M32 10l6 14 15 1-12 10 4 15-13-8-13 8 4-15-12-10 15-1 6-14Z"/></svg>`,
+        music: `<svg ${common}><path d="M38 14v27"/><path d="M38 14l12 4v9l-12-4"/><circle cx="27" cy="45" r="8"/><path d="M17 17c-4 8-4 17 0 25"/><path d="M24 21c-2 5-2 11 0 16"/></svg>`,
+        play: `<svg ${common}><rect x="13" y="20" width="38" height="25" rx="8"/><path d="M23 33h10"/><path d="M28 28v10"/><circle cx="41" cy="30" r="2"/><circle cx="45" cy="37" r="2"/></svg>`,
+        home: `<svg ${common}><path d="M12 31 32 15l20 16"/><path d="M18 29v21h28V29"/><path d="M27 50V37h10v13"/></svg>`,
+        map: `<svg ${common}><path d="M12 19l13-5 14 5 13-5v31l-13 5-14-5-13 5V19Z"/><path d="M25 14v31"/><path d="M39 19v31"/></svg>`
+      };
+      return svgs[type] || svgs.map;
+    }
+
+    function renderFilters() {
+      $("filters").innerHTML = filters.map((filter) => (
+        `<button type="button" class="chip ${state.activeFilters.has(filter.id) ? "active" : ""}" data-filter="${filter.id}">${filter.label}</button>`
+      )).join("");
+    }
+
+    function matchesFilters(activity) {
+      const active = state.activeFilters;
+      if (active.has("friday") && !supportsDay(activity, "friday")) return false;
+      if (active.has("saturday") && !supportsDay(activity, "saturday")) return false;
+      if (active.has("kidFriendly") && !activity.kidFriendly) return false;
+      if (active.has("dogFriendly") && !activity.dogFriendly) return false;
+      if (active.has("rainFriendly") && activity.rainFriendly === "no") return false;
+      if (active.has("indoor") && !activity.indoor) return false;
+      if (active.has("outdoor") && !activity.outdoor) return false;
+      if (active.has("food") && !activity.food) return false;
+      if (active.has("lowCost") && activity.costEstimate > 75) return false;
+      if (active.has("free") && activity.costEstimate !== 0) return false;
+
+      const query = state.search.trim().toLowerCase();
+      if (!query) return true;
+
+      return [
+        activity.name,
+        activity.category,
+        activity.description,
+        activity.notes,
+        activity.bestDay
+      ].join(" ").toLowerCase().includes(query);
+    }
+
+    function renderActivities() {
+      const filtered = activities.filter(matchesFilters);
+      $("resultCount").textContent = `${filtered.length} ${filtered.length === 1 ? "activity" : "activities"}`;
+
+      if (!filtered.length) {
+        $("activityCards").innerHTML = `<div class="empty-results">No activities match those filters.</div>`;
+        return;
+      }
+
+      $("activityCards").innerHTML = filtered.map((activity) => {
+        const fridayFull = state.itinerary.friday.length >= maxBlocks.friday;
+        const saturdayFull = state.itinerary.saturday.length >= maxBlocks.saturday;
+        const onFriday = state.itinerary.friday.some((item) => item.id === activity.id);
+        const onSaturday = state.itinerary.saturday.some((item) => item.id === activity.id);
+        const fridayDisabled = fridayFull || onFriday || !supportsDay(activity, "friday");
+        const saturdayDisabled = saturdayFull || onSaturday || !supportsDay(activity, "saturday");
+
+        return `
+          <article class="activity-card">
+            <div class="art ${getArtClass(activity)}" aria-hidden="true"><span>${getActivityGraphic(activity)}</span></div>
+            <div class="activity-main">
+              <div class="card-top">
+                <div>
+                  <h3>${placeNameHtml(activity)}</h3>
+                  <div class="category">${activity.category}</div>
+                </div>
+                <span class="badge ${activity.costEstimate === 0 ? "yes" : activity.costEstimate <= 75 ? "some" : "no"}">${activity.costEstimate === 0 ? "Free" : formatMoney(activity.costEstimate)}</span>
+              </div>
+              <p class="description">${activity.description}</p>
+              <div class="meta-grid">
+                <div class="meta"><b>Duration</b><span>${formatMinutes(activity.activityDurationMinutes)}</span></div>
+                <div class="meta"><b>From home</b><span>${activity.travelFromHomeMinutes} min</span></div>
+                <div class="meta"><b>Distance</b><span>${activity.distanceFromHomeMiles} mi</span></div>
+                <div class="meta"><b>Best day</b><span>${activity.bestDay}</span></div>
+              </div>
+              <div class="badges">
+                ${badge("Kids", activity.kidFriendly ? "yes" : "no")}
+                ${badge("Dogs", activity.dogFriendly ? "yes" : "no")}
+                ${badge("Rain", activity.rainFriendly)}
+                ${activity.indoor ? `<span class="badge yes">Indoor</span>` : ""}
+                ${activity.outdoor ? `<span class="badge some">Outdoor</span>` : ""}
+              </div>
+              <div class="card-actions">
+                <button class="primary-button" type="button" data-add-day="friday" data-id="${activity.id}" ${fridayDisabled ? "disabled" : ""}>Add Friday</button>
+                <button class="ghost-button" type="button" data-add-day="saturday" data-id="${activity.id}" ${saturdayDisabled ? "disabled" : ""}>Add Saturday</button>
+                ${getActivityUrl(activity) ? `<a class="details-link" href="${getActivityUrl(activity)}" target="_blank" rel="noopener noreferrer">Open details</a>` : ""}
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function badge(label, value) {
+      const normalized = value === true ? "yes" : value === false ? "no" : value;
+      const text = normalized === "some" ? `${label}: Some` : normalized === "yes" ? `${label}: Yes` : `${label}: No`;
+      return `<span class="badge ${normalized}">${text}</span>`;
+    }
+
+    function addToDay(day, activityId) {
+      if (state.itinerary[day].length >= maxBlocks[day]) {
+        showToast(`${capitalize(day)} is full.`);
+        return;
+      }
+
+      if (!state.itinerary[day].some((item) => item.id === activityId)) {
+        state.itinerary[day].push({
+          id: activityId,
+          date: dayDefaultDates[day],
+          startTime: getNextStartTime(day, activityId)
+        });
+        saveAndRender();
+      }
+    }
+
+    function getNextStartTime(day, activityId) {
+      const list = state.itinerary[day];
+      if (!list.length) return dayDefaultStartTimes[day];
+
+      const previousEntry = list[list.length - 1];
+      const previousActivity = getActivity(previousEntry.id);
+      const nextActivity = getActivity(activityId);
+      const previousStart = timeToMinutes(previousEntry.startTime) ?? timeToMinutes(dayDefaultStartTimes[day]);
+      const travelMinutes = previousActivity.travelTimesToOtherActivities[nextActivity.id] || 15;
+      return minutesToTime(previousStart + previousActivity.activityDurationMinutes + travelMinutes);
+    }
+
+    function removeFromDay(day, index) {
+      state.itinerary[day].splice(index, 1);
+      saveAndRender();
+    }
+
+    function moveActivity(day, index, direction) {
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= state.itinerary[day].length) return;
+      const items = state.itinerary[day];
+      const [item] = items.splice(index, 1);
+      items.splice(nextIndex, 0, item);
+      saveAndRender();
+    }
+
+    function renderItineraryDay(day) {
+      const list = state.itinerary[day];
+      const totalBlocks = maxBlocks[day];
+      const metrics = calculateDay(day);
+      const html = [];
+
+      for (let index = 0; index < totalBlocks; index += 1) {
+        const entry = list[index];
+        const activity = entry ? getActivity(entry.id) : null;
+
+        if (!activity) {
+          html.push(`<div class="itinerary-block empty-block">Block ${index + 1} is open</div>`);
+          continue;
+        }
+
+      const step = metrics.steps[index];
+        html.push(`
+          <div class="itinerary-block" draggable="true" data-day="${day}" data-index="${index}">
+            <div class="time-rail">
+              <span>${formatDate(step.date)}</span>
+              <span>${formatClock(step.startTime)}</span>
+              <span>${formatClock(step.endTime)}</span>
+            </div>
+            <div class="calendar-event">
+              <div class="block-title">
+                <strong>${index + 1}. ${placeNameHtml(activity)}</strong>
+                <span>${formatMoney(activity.costEstimate)}</span>
+              </div>
+              <label class="time-picker-row">
+                Date
+                <input type="date" value="${step.date}" data-date="${day}:${index}" aria-label="Date for ${activity.name}">
+                Time
+                <input type="time" value="${step.startTime}" data-time="${day}:${index}" aria-label="Start time for ${activity.name}">
+                <span>Ends ${formatClock(step.endTime)}</span>
+              </label>
+              <div class="timeline">
+                <span>Travel before: ${formatMinutes(step.travelMinutes)}</span>
+                <span>Activity time: ${formatMinutes(activity.activityDurationMinutes)}</span>
+                <span>Running total: ${formatMinutes(step.runningTotalMinutes)}</span>
+                <span>Running travel: ${formatMinutes(step.runningTravelMinutes)}</span>
+              </div>
+              <div class="block-actions">
+                <button class="icon-button" type="button" title="Move up" data-move="${day}:${index}:-1" ${index === 0 ? "disabled" : ""}>^</button>
+                <button class="icon-button" type="button" title="Move down" data-move="${day}:${index}:1" ${index === list.length - 1 ? "disabled" : ""}>v</button>
+                <button class="tiny-button" type="button" data-remove="${day}:${index}">Remove</button>
+              </div>
+            </div>
+          </div>
+        `);
+      }
+
+      $(`${day}Blocks`).innerHTML = html.join("");
+      $(`${day}Count`).textContent = `${list.length} / ${totalBlocks} blocks`;
+    }
+
+    function calculateDay(day) {
+      const entries = state.itinerary[day];
+      let runningTravelMinutes = 0;
+      let runningTotalMinutes = 0;
+      let activityMinutes = 0;
+      let cost = 0;
+      let previousEndMinutes = null;
+      const scheduleWarnings = [];
+      const steps = entries.map((entry, index) => {
+        const activity = getActivity(entry.id);
+        const previous = index > 0 ? getActivity(entries[index - 1].id) : null;
+        const travelMinutes = previous
+          ? previous.travelTimesToOtherActivities[activity.id] || 15
+          : activity.travelFromHomeMinutes;
+        const date = entry.date || dayDefaultDates[day];
+        const startTime = entry.startTime || dayDefaultStartTimes[day];
+        const startMinutes = timeToMinutes(startTime) ?? timeToMinutes(dayDefaultStartTimes[day]);
+        const endTime = minutesToTime(startMinutes + activity.activityDurationMinutes);
+        const readyMinutes = previousEndMinutes === null ? null : previousEndMinutes + travelMinutes;
+
+        if (readyMinutes !== null && startMinutes < readyMinutes) {
+          scheduleWarnings.push(`${capitalize(day)}: ${activity.name} starts before there is enough travel time from the previous stop.`);
+        }
+
+        runningTravelMinutes += travelMinutes;
+        activityMinutes += activity.activityDurationMinutes;
+        runningTotalMinutes += travelMinutes + activity.activityDurationMinutes;
+        cost += activity.costEstimate;
+        previousEndMinutes = startMinutes + activity.activityDurationMinutes;
+
+        return {
+          id: entry.id,
+          date,
+          startTime,
+          endTime,
+          travelMinutes,
+          runningTravelMinutes,
+          runningTotalMinutes
+        };
+      });
+
+      return {
+        steps,
+        scheduleWarnings,
+        cost,
+        activityMinutes,
+        travelMinutes: runningTravelMinutes,
+        totalMinutes: runningTotalMinutes
+      };
+    }
+
+    function calculateSummary() {
+      const friday = calculateDay("friday");
+      const saturday = calculateDay("saturday");
+      const selectedIds = [...state.itinerary.friday, ...state.itinerary.saturday].map((item) => item.id);
+      const selectedActivities = selectedIds.map(getActivity).filter(Boolean);
+
+      return {
+        friday,
+        saturday,
+        selectedActivities,
+        totalActivities: selectedActivities.length,
+        totalCost: friday.cost + saturday.cost,
+        activityMinutes: friday.activityMinutes + saturday.activityMinutes,
+        travelMinutes: friday.travelMinutes + saturday.travelMinutes,
+        totalMinutes: friday.totalMinutes + saturday.totalMinutes,
+        hasOutdoor: selectedActivities.some((activity) => activity.outdoor)
+      };
+    }
+
+    function renderSummary() {
+      const summary = calculateSummary();
+      $("summaryGrid").innerHTML = `
+        ${summaryStat("Activities", summary.totalActivities)}
+        ${summaryStat("Estimated Cost", formatMoney(summary.totalCost))}
+      `;
+
+      const warnings = [];
+      if (summary.friday.totalMinutes > 300) warnings.push("Friday is over 5 hours. Consider trimming one stop.");
+      if (summary.saturday.totalMinutes > 480) warnings.push("Saturday is over 8 hours. Consider trimming one stop.");
+      warnings.push(...summary.friday.scheduleWarnings, ...summary.saturday.scheduleWarnings);
+      if (summary.hasOutdoor) warnings.push("Check weather forecast before finalizing plans.");
+      $("warnings").innerHTML = warnings.map((warning) => `<div class="warning">${warning}</div>`).join("");
+
+      $("briefActivities").textContent = `${summary.totalActivities} ${summary.totalActivities === 1 ? "stop" : "stops"}`;
+      $("briefTime").textContent = "selected";
+      $("briefCost").textContent = formatMoney(summary.totalCost);
+    }
+
+    function summaryStat(label, value) {
+      return `<div class="summary-stat"><span>${label}</span><b>${value}</b></div>`;
+    }
+
+    function renderAll() {
+      renderFilters();
+      renderActivities();
+      renderItineraryDay("friday");
+      renderItineraryDay("saturday");
+      renderSummary();
+    }
+
+    function saveAndRender() {
+      savePlan();
+      updateHash();
+      renderAll();
+    }
+
+    function getPlanPayload() {
+      return {
+        friday: state.itinerary.friday,
+        saturday: state.itinerary.saturday,
+        customActivities
+      };
+    }
+
+    function normalizeEntry(item, day, index, list) {
+      const id = typeof item === "string" ? item : item && item.id;
+      const date = typeof item === "object" && item && /^\d{4}-\d{2}-\d{2}$/.test(item.date || "")
+        ? item.date
+        : dayDefaultDates[day];
+      const startTime = typeof item === "object" && item && /^\d{2}:\d{2}$/.test(item.startTime || "")
+        ? item.startTime
+        : null;
+      if (!id) return null;
+
+      if (startTime) return { id, date, startTime };
+
+      if (index === 0) return { id, date, startTime: dayDefaultStartTimes[day] };
+
+      const previous = normalizeEntry(list[index - 1], day, index - 1, list);
+      if (!previous) return { id, date, startTime: dayDefaultStartTimes[day] };
+      const previousActivity = getActivity(previous.id);
+      const activity = getActivity(id);
+      const previousStart = timeToMinutes(previous.startTime) ?? timeToMinutes(dayDefaultStartTimes[day]);
+      const travelMinutes = previousActivity && activity
+        ? previousActivity.travelTimesToOtherActivities[activity.id] || 15
+        : 15;
+      return {
+        id,
+        date,
+        startTime: minutesToTime(previousStart + (previousActivity?.activityDurationMinutes || 60) + travelMinutes)
+      };
+    }
+
+    function isValidPlan(plan) {
+      if (!plan || !Array.isArray(plan.friday) || !Array.isArray(plan.saturday)) return false;
+      const customIds = normalizeCustomActivities(plan.customActivities).map((activity) => activity.id);
+      const validIds = new Set([...activities.map((activity) => activity.id), ...customIds]);
+      return [...plan.friday, ...plan.saturday].every((item) => {
+        const id = typeof item === "string" ? item : item && item.id;
+        return validIds.has(id);
+      });
+    }
+
+    function normalizePlan(plan) {
+      const seen = {
+        friday: new Set(),
+        saturday: new Set()
+      };
+
+      function normalizeDay(day) {
+        return plan[day]
+          .map((item, index, list) => normalizeEntry(item, day, index, list))
+          .filter(Boolean)
+          .filter((item) => {
+            if (seen[day].has(item.id)) return false;
+            seen[day].add(item.id);
+            return true;
+          })
+          .slice(0, maxBlocks[day]);
+      }
+
+      return {
+        friday: normalizeDay("friday"),
+        saturday: normalizeDay("saturday"),
+        customActivities: normalizeCustomActivities(plan.customActivities)
+      };
+    }
+
+    function normalizeCustomActivities(items) {
+      if (!Array.isArray(items)) return [];
+      return items
+        .filter((item) => item && typeof item.name === "string" && item.name.trim())
+        .map((item) => ({
+          id: item.id && String(item.id).startsWith("custom-") ? String(item.id) : makeCustomId(item.name),
+          name: String(item.name).trim(),
+          category: item.category || "Custom",
+          description: item.description || "Custom family-added activity.",
+          bestDay: item.bestDay || "Fri/Sat",
+          costEstimate: Number(item.costEstimate) || 0,
+          activityDurationMinutes: Number(item.activityDurationMinutes) || 60,
+          travelFromHomeMinutes: Number(item.travelFromHomeMinutes) || 15,
+          distanceFromHomeMiles: Number(item.distanceFromHomeMiles) || 0,
+          rainFriendly: item.rainFriendly === "no" ? "no" : "yes",
+          kidFriendly: item.kidFriendly !== false,
+          dogFriendly: item.dogFriendly === true,
+          outdoor: item.outdoor === true,
+          indoor: item.indoor !== false,
+          food: item.food === true,
+          notes: item.notes || item.description || "Custom family-added activity.",
+          websiteUrl: item.websiteUrl || "",
+          cluster: item.cluster || "downtown",
+          custom: true
+        }));
+    }
+
+    function savePlan() {
+      localStorage.setItem(storageKey, JSON.stringify(getPlanPayload()));
+    }
+
+    function loadPlan() {
+      const hashPlan = parseHashPlan();
+      if (hashPlan) {
+        customActivities = hashPlan.customActivities || [];
+        activities = buildActivityList();
+        state.itinerary = normalizePlan(hashPlan);
+        customActivities = state.itinerary.customActivities || customActivities;
+        activities = buildActivityList();
+        delete state.itinerary.customActivities;
+        savePlan();
+        return;
+      }
+
+      try {
+        const saved = JSON.parse(localStorage.getItem(storageKey));
+        if (saved && Array.isArray(saved.customActivities)) {
+          customActivities = normalizeCustomActivities(saved.customActivities);
+          activities = buildActivityList();
+        }
+        if (isValidPlan(saved)) {
+          const normalized = normalizePlan(saved);
+          customActivities = normalized.customActivities || customActivities;
+          activities = buildActivityList();
+          state.itinerary = {
+            friday: normalized.friday,
+            saturday: normalized.saturday
+          };
+        }
+      } catch (error) {
+        localStorage.removeItem(storageKey);
+      }
+    }
+
+    function parseHashPlan() {
+      const match = location.hash.match(/plan=([^&]+)/);
+      if (!match) return null;
+      try {
+        const plan = JSON.parse(decodeURIComponent(match[1]));
+        return isValidPlan(plan) ? plan : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function addCustomActivity(event) {
+      event.preventDefault();
+      const name = $("customName").value.trim();
+      if (!name) {
+        showToast("Add a name first.");
+        return;
+      }
+
+      const category = $("customCategory").value;
+      const description = $("customDescription").value.trim() || "Custom family-added activity.";
+      const customActivity = {
+        id: makeCustomId(name),
+        name,
+        category,
+        description,
+        bestDay: $("customBestDay").value,
+        costEstimate: Math.max(0, Number($("customCost").value) || 0),
+        activityDurationMinutes: Math.max(15, Number($("customDuration").value) || 60),
+        travelFromHomeMinutes: Math.max(0, Number($("customTravel").value) || 15),
+        distanceFromHomeMiles: Math.max(0, Number($("customDistance").value) || 0),
+        rainFriendly: $("customRain").checked ? "yes" : "no",
+        kidFriendly: $("customKid").checked,
+        dogFriendly: $("customDog").checked,
+        outdoor: $("customOutdoor").checked,
+        indoor: $("customIndoor").checked,
+        food: $("customFood").checked || category === "Food & Drink",
+        notes: description,
+        websiteUrl: $("customWebsite").value.trim(),
+        cluster: "downtown",
+        custom: true
+      };
+
+      customActivities.push(customActivity);
+      activities = buildActivityList();
+      event.target.reset();
+      $("customCost").value = "0";
+      $("customDuration").value = "60";
+      $("customTravel").value = "15";
+      $("customDistance").value = "5";
+      $("customKid").checked = true;
+      $("customRain").checked = true;
+      $("customIndoor").checked = true;
+      saveAndRender();
+      showToast("Activity card added.");
+    }
+
+    function updateHash() {
+      const payload = encodeURIComponent(JSON.stringify(getPlanPayload()));
+      history.replaceState(null, "", `${location.pathname}${location.search}#plan=${payload}`);
+    }
+
+    function copyItinerary() {
+      const summary = calculateSummary();
+      const lines = [
+        "Weekend Visit Planner",
+        "",
+        "Friday:"
+      ];
+
+      if (state.itinerary.friday.length) {
+        state.itinerary.friday.forEach((entry) => lines.push(`* ${formatDate(entry.date)} ${formatClock(entry.startTime)} - ${getActivity(entry.id).name}`));
+      } else {
+        lines.push("* No activities selected");
+      }
+
+      lines.push("", "Saturday:");
+      if (state.itinerary.saturday.length) {
+        state.itinerary.saturday.forEach((entry) => lines.push(`* ${formatDate(entry.date)} ${formatClock(entry.startTime)} - ${getActivity(entry.id).name}`));
+      } else {
+        lines.push("* No activities selected");
+      }
+
+      lines.push(
+        "",
+        `Total Cost: ${formatMoney(summary.totalCost)}`,
+        `Total Time: ${formatMinutes(summary.totalMinutes)}`,
+        `Activity Time: ${formatMinutes(summary.activityMinutes)}`,
+        `Travel Time: ${formatMinutes(summary.travelMinutes)}`,
+        "",
+        `Share Link: ${location.href}`
+      );
+
+      const text = lines.join("\n");
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => showToast("Itinerary copied."));
+      } else {
+        const textarea = document.createElement("textarea");
+        textarea.value = text;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        textarea.remove();
+        showToast("Itinerary copied.");
+      }
+    }
+
+    function clearPlan() {
+      state.itinerary.friday = [];
+      state.itinerary.saturday = [];
+      localStorage.removeItem(storageKey);
+      saveAndRender();
+      showToast("Plan cleared.");
+    }
+
+    function showToast(message) {
+      const toast = $("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    function capitalize(value) {
+      return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    function bindEvents() {
+      $("filters").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-filter]");
+        if (!button) return;
+        const id = button.dataset.filter;
+        state.activeFilters.has(id) ? state.activeFilters.delete(id) : state.activeFilters.add(id);
+        renderAll();
+      });
+
+      $("searchInput").addEventListener("input", (event) => {
+        state.search = event.target.value;
+        renderActivities();
+      });
+
+      $("activityCards").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-add-day]");
+        if (!button) return;
+        addToDay(button.dataset.addDay, button.dataset.id);
+      });
+
+      $("customActivityForm").addEventListener("submit", addCustomActivity);
+
+      document.addEventListener("click", (event) => {
+        const removeButton = event.target.closest("[data-remove]");
+        if (removeButton) {
+          const [day, index] = removeButton.dataset.remove.split(":");
+          removeFromDay(day, Number(index));
+          return;
+        }
+
+        const moveButton = event.target.closest("[data-move]");
+        if (moveButton) {
+          const [day, index, direction] = moveButton.dataset.move.split(":");
+          moveActivity(day, Number(index), Number(direction));
+        }
+      });
+
+      document.addEventListener("change", (event) => {
+        const dateInput = event.target.closest("[data-date]");
+        if (dateInput) {
+          const [day, index] = dateInput.dataset.date.split(":");
+          if (!state.itinerary[day] || !state.itinerary[day][Number(index)]) return;
+          state.itinerary[day][Number(index)].date = dateInput.value;
+          saveAndRender();
+          return;
+        }
+
+        const input = event.target.closest("[data-time]");
+        if (!input) return;
+        const [day, index] = input.dataset.time.split(":");
+        if (!state.itinerary[day] || !state.itinerary[day][Number(index)]) return;
+        state.itinerary[day][Number(index)].startTime = input.value;
+        saveAndRender();
+      });
+
+      ["fridayBlocks", "saturdayBlocks"].forEach((containerId) => {
+        const container = $(containerId);
+
+        container.addEventListener("dragstart", (event) => {
+          const block = event.target.closest("[draggable='true']");
+          if (!block) return;
+          state.dragged = {
+            day: block.dataset.day,
+            index: Number(block.dataset.index)
+          };
+          block.classList.add("dragging");
+          event.dataTransfer.effectAllowed = "move";
+        });
+
+        container.addEventListener("dragend", (event) => {
+          const block = event.target.closest("[draggable='true']");
+          if (block) block.classList.remove("dragging");
+          state.dragged = null;
+        });
+
+        container.addEventListener("dragover", (event) => {
+          if (!state.dragged) return;
+          const block = event.target.closest("[data-index]");
+          if (!block || block.dataset.day !== state.dragged.day) return;
+          event.preventDefault();
+        });
+
+        container.addEventListener("drop", (event) => {
+          const block = event.target.closest("[data-index]");
+          if (!state.dragged || !block || block.dataset.day !== state.dragged.day) return;
+          event.preventDefault();
+          const day = state.dragged.day;
+          const from = state.dragged.index;
+          const to = Number(block.dataset.index);
+          if (from === to) return;
+          const [item] = state.itinerary[day].splice(from, 1);
+          state.itinerary[day].splice(to, 0, item);
+          saveAndRender();
+        });
+      });
+
+      $("copyButton").addEventListener("click", copyItinerary);
+      $("copyTopButton").addEventListener("click", copyItinerary);
+      $("printButton").addEventListener("click", () => window.print());
+      $("clearPlanButton").addEventListener("click", clearPlan);
+      $("jumpButton").addEventListener("click", () => $("fridayCard").scrollIntoView({ behavior: "smooth", block: "start" }));
+      window.addEventListener("hashchange", () => {
+        const hashPlan = parseHashPlan();
+        if (hashPlan) {
+          state.itinerary = normalizePlan(hashPlan);
+          savePlan();
+          renderAll();
+        }
+      });
+    }
+
+    loadPlan();
+    bindEvents();
+    renderAll();
+  </script>
+</body>
+</html>
